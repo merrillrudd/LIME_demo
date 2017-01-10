@@ -22,6 +22,10 @@ main_dir <- "C:\\Git_Projects\\LIME_demo"
 ## data directory
 data_dir <- file.path(main_dir, "data")
 
+## figures
+fig_dir <- file.path(main_dir, "figs")
+dir.create(fig_dir, showWarnings=FALSE)
+
 ## results directory
 res_dir <- file.path(main_dir, "results")
 dir.create(res_dir, showWarnings=FALSE)
@@ -42,7 +46,49 @@ plot(cr_lh$W_a, ylim=c(0, max(cr_lh$W_a)*1.1), lwd=3, type="l", xlab="Age", ylab
 plot(cr_lh$Mat_a, ylim=c(0, max(cr_lh$Mat_a)*1.1), lwd=3, type="l", xlab="Age", ylab="Proportion mature")
 plot(cr_lh$S_a, ylim=c(0, max(cr_lh$S_a)*1.1), lwd=3, type="l", xlab="Age", ylab="Selectivity")
 
+
 ########################################
+## Exploring SPR
+########################################
+## SPR
+f_vec <- seq(0,1,by=0.1)
+spr_vec <- with(cr_lh, sapply(1:length(f_vec), function(x) calc_ref(Mat_a=Mat_a, W_a=W_a, M=M, S_a=S_a, F=f_vec[x], ref=FALSE)))
+
+png(file.path(fig_dir, "SPR.png"), height=10, width=12, res=200, units="in")
+par(mfrow=c(1,1), mar=c(5,5,5,5))
+plot(f_vec, spr_vec, lwd=5, type="o", pch=19, cex=2, xlab="Fishing mortality rate", ylab="SPR", cex.axis=2, cex.lab=2, xaxs="i", yaxs="i", xpd=NA)
+dev.off()
+
+F30 <- tryCatch(with(cr_lh, uniroot(calc_ref, lower=0, upper=50, Mat_a=Mat_a, W_a=W_a, M=M, S_a=S_a, ref=0.3)$root), error=function(e) NA)
+
+png(file.path(fig_dir, "SPR_ref.png"), height=10, width=12, res=200, units="in")
+par(mfrow=c(1,1), mar=c(5,5,5,5))
+plot(f_vec, spr_vec, lwd=5, type="o", pch=19, cex=2, xlab="Fishing mortality rate", ylab="SPR", cex.axis=2, cex.lab=2, xaxs="i", yaxs="i", xpd=NA)
+segments(x0=0, x1=F30, y0=0.3, y1=0.3, col="steelblue", lwd=4, lty=2)
+segments(x0=F30, x1=F30, y0=0, y1=0.3, col="steelblue", lwd=4, lty=2)
+points(x=F30, y=0.3, cex=4, col="steelblue", pch=19)
+dev.off()
+
+png(file.path(fig_dir, "SPR_kobe.png"), height=10, width=12, res=200, units="in")
+par(mfrow=c(1,1), mar=c(5,5,5,5))
+plot(x=1, y=1, type="n", xlim=c(0,1), ylim=c(0,3), xaxs="i", yaxs="i", xlab="SPR", ylab="F/F30", cex.axis=2, cex.lab=2)
+polygon(x=c(0.3,1,1,0.3), y=c(0,0,1,1), col="#00AA0030", border=NA)
+polygon(x=c(0,0.3,0.3,0), y=c(1,1,3,3), col="#AA000030", border=NA)
+abline(h=1, lty=2, lwd=3)
+abline(v=0.3, lty=2, lwd=3)
+dev.off()
+
+png(file.path(fig_dir, "MSY_kobe.png"), height=10, width=12, res=200, units="in")
+par(mfrow=c(1,1), mar=c(5,5,5,5))
+plot(x=1, y=1, type="n", xlim=c(0,3), ylim=c(0,3), xaxs="i", yaxs="i", xlab="B/Bmsy", ylab="F/Fmsy", cex.axis=2, cex.lab=2)
+polygon(x=c(1,3,3,1), y=c(0,0,1,1), col="#00AA0030", border=NA)
+polygon(x=c(0,1,1,0), y=c(1,1,3,3), col="#AA000030", border=NA)
+abline(h=1, lty=2, lwd=3)
+abline(v=1, lty=2, lwd=3)
+dev.off()
+
+
+#####################################
 ## Simulate a population in equilibrium
 ########################################
 cr_lhsim <- create_lh_list(vbk=0.21, linf=64.58, lwa=0.0245, lwb=2.790, S50=3, selex_input="age", M50=34, maturity_input="length", SigmaR=0.01, SigmaF=0.01, M=0.43, F1=0.34)
@@ -158,7 +204,6 @@ der <- results_sim$Derived
       	points(x=simdata$SPR_t[length(simdata$SPR_t)], y=simdata$F_t[length(simdata$F_t)]/F30, col="black", pch=19, cex=2)
       	points(x=LBSPR_outs$SPR[length(LBSPR_outs$SPR)], y=(LBSPR_outs$FM[length(LBSPR_outs$FM)]*cr_lhsim$M)/F30, col="red", pch=19, cex=2)
       	points(x=LBSPR_outs2$SPR[length(LBSPR_outs2$SPR)], y=(LBSPR_outs2$FM[length(LBSPR_outs2$FM)]*cr_lhsim$M)/F30, col="orange", pch=19, cex=2)
-
       }
 
 ########################################
